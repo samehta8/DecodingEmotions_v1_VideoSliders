@@ -21,14 +21,15 @@ Edit `config/config.yaml` and update these paths:
 
 ```yaml
 paths:
-  db_path: "/path/to/your/database.duckdb"
+  metadata_path: "/path/to/your/metadata.duckdb"  # or .csv file
   video_path: "/path/to/your/videos/"
 ```
 
 **Important**:
 - Video files must be `.mp4` format
-- Video filenames (without extension) should match the `id` column in your database
-- Database should have an `events` table with columns: id, team, player, jersey_number, type, body_part, start_x, start_y, end_x, end_y
+- Video filenames (without extension) should match the `id` column in your metadata
+- **For DuckDB**: Database should have an `events` table with columns: id, team, player, jersey_number, type, body_part, start_x, start_y, end_x, end_y
+- **For CSV**: File should have columns including: id, team, player, jersey_number, type, body_part, start_x, start_y, end_x, end_y
 
 ### 3. Run the App
 

@@ -73,7 +73,7 @@ Update paths in `config/config.yaml`:
 
 ```yaml
 paths:
-  db_path: "/absolute/path/to/database.duckdb"
+  metadata_path: "/absolute/path/to/metadata.duckdb"  # or .csv file
   video_path: "/absolute/path/to/videos/"
 ```
 

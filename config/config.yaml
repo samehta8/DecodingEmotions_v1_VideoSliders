@@ -1,5 +1,5 @@
 paths:
-  db_path: "/home/max/drive/projects/3_Creativity/data/statsbomb_event_data.duckdb"
+  metadata_path: "/home/max/drive/projects/3_Creativity/data/metamehta.csv"
   
   # path to external drive on Linux
   #video_path: "/media/max/Elements/videos_events_sample"
@@ -9,15 +9,43 @@ paths:
   
   # dummy videos on localhost max
   #video_path: "/home/max/drive/projects/3_Creativity/creativity-rating-app/videos_all/"
-  video_path: "/home/max/drive/projects/3_Creativity/creativity-rating-app/videos_all/"
+  video_path: "/home/max/drive/projects/3_Creativity/creativity-rating-app/videos/"
 
 settings:
   min_ratings_per_video: 2
   questionnaire_fields_file: "config/questionnaire_fields.yaml"  # External file for questionnaire configuration
   rating_scales_file: "config/rating_scales.yaml"  # External file for rating scales configuration
-  display_metadata: true  # Show metadata (team, player, type, etc.) at top of video screen
-  display_pitch: true  # Show pitch visualization next to video
-  video_playback_mode: "loop"  # "loop" = video repeats, "once" = plays once and cannot be restarted
+  display_metadata: false  # Show metadata (team, player, type, etc.) at top of video screen
+  display_pitch: false  # Show pitch visualization next to video
+  video_playback_mode: "once"  # "loop" = video repeats, "once" = plays once and cannot be restarted
+
+  # Video selection and stratification settings
+  number_of_videos: null  # Maximum videos to show per session (null = show all available)
+
+  # Stratified sampling configuration (optional)
+  # Leave empty or comment out to use simple random sampling
+  variables_for_stratification:
+  # Example configuration:
+    - variable: "lowHighPD"
+      levels: ["Low", "High"]
+      proportions: [0.5, 0.5]  # Must sum to 1.0
+    - variable: "OlympicParalympic"
+      levels: ["Olympic", "Paralympic"]
+      proportions: [0.5, 0.5]
+
+  # Metadata columns to display at top of video screen
+  # Each item specifies a label (display name) and column (metadata column name)
+  metadata_to_show:
+    - label: "Team"
+      column: "team"
+    - label: "Player"
+      column: "player"
+    - label: "Jersey #"
+      column: "jersey_number"
+    - label: "Type"
+      column: "type"
+    - label: "Body Part"
+      column: "bodypart"
 
 # Screen layout proportions for VideoPlayerScreen
 # These values control the relative heights of different sections (must sum to 1.0)

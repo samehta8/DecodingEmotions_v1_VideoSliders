@@ -11,7 +11,7 @@
 # - required_to_proceed: true/false - whether user must provide input for this scale to proceed (default: true)
 #   Note: When "action not recognized" is pressed, all scales become optional
 
-- active: true
+- active: false
   type: "discrete"
   title: "Creativity"
   label_low: "not creative"
@@ -19,7 +19,7 @@
   values: [1, 2, 3, 4, 5, 6, 7]
   required_to_proceed: true
 
-- active: true
+- active: false
   type: "discrete"
   title: "Technical Correctness"
   label_low: "very low"
@@ -27,7 +27,7 @@
   values: [1, 2, 3, 4, 5, 6, 7]
   required_to_proceed: true
 
-- active: true
+- active: false
   type: "discrete"
   title: "Aesthetic Appeal"
   label_low: "not appealing"
@@ -39,12 +39,38 @@
 # Uncomment to add a slider scale from 0-100
 - active: true
   type: "slider"
-  title: "Overall Quality"
-  label_low: "poor"
-  label_high: "excellent"
+  title: "Angry"
+  label_low: "not angry"
+  label_high: "very angry"
   slider_min: 0
   slider_max: 100
   required_to_proceed: false
+
+- active: true
+  type: "slider"
+  title: "Happy"
+  label_low: ""
+  label_high: ""
+  slider_min: 0
+  slider_max: 100
+  required_to_proceed: false
+
+- active: true
+  type: "slider"
+  title: "Sad"
+  label_low: "not at all sad"
+  label_high: "very sad"
+  slider_min: 0
+  slider_max: 100
+  required_to_proceed: false
+
+- active: true
+  type: "discrete"
+  title: "Win or Loss"
+  #label_low: ""
+  #label_high: "very appealing"
+  values: ["win", "loss"]
+  required_to_proceed: true
 
 # Example of a text input scale (inactive by default)
 # Uncomment to add a free-text comments field

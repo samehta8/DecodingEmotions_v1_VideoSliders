@@ -18,6 +18,135 @@ from utils.config_loader import load_rating_scales
 from utils.data_persistence import save_rating, get_rated_videos_for_user
 from utils.styling import apply_compact_layout, set_video_height, set_spacing
 
+def stratified_sample_videos(videos_to_rate, df_metadata, number_of_videos, strat_config):
+    """
+    Perform hierarchical stratified sampling of videos based on metadata variables.
+
+    Priority-based approach: First variable has highest priority in ensuring balance,
+    then within each first-level stratum, second variable is applied, and so on.
+
+    Args:
+        videos_to_rate: List of video filenames (e.g., ['event_001.mp4', ...])
+        df_metadata: DataFrame with metadata including 'id' column matching video IDs
+        number_of_videos: Target number of videos to select (None = all available)
+        strat_config: List of stratification configs, each with 'variable', 'levels', 'proportions'
+
+    Returns:
+        List of selected video filenames (shuffled)
+    """
+    # If no stratification config or empty, use simple random sampling
+    if not strat_config or len(strat_config) == 0:
+        if number_of_videos and number_of_videos < len(videos_to_rate):
+            selected = random.sample(videos_to_rate, number_of_videos)
+            random.shuffle(selected)
+            return selected
+        else:
+            random.shuffle(videos_to_rate)
+            return videos_to_rate
+
+    # Get event IDs from video filenames
+    event_ids = [v.replace('.mp4', '') for v in videos_to_rate]
+
+    # Filter metadata to only available videos
+    df = df_metadata[df_metadata['id'].isin(event_ids)].copy()
+
+    if df.empty:
+        print("[WARNING] No metadata found for available videos")
+        return videos_to_rate
+
+    # Determine target count
+    target = number_of_videos if number_of_videos else len(df)
+    target = min(target, len(df))  # Cap at available
+
+    # Apply hierarchical stratification
+    selected_ids = _stratified_sample_recursive(df, strat_config, target, 0)
+
+    # Convert back to video filenames
+    selected_videos = [vid_id + '.mp4' for vid_id in selected_ids]
+
+    # Shuffle to randomize presentation order within strata
+    random.shuffle(selected_videos)
+
+    return selected_videos
+
+
+def _stratified_sample_recursive(df, strat_config, target_count, level):
+    """
+    Recursively apply stratification by each variable in hierarchy.
+
+    Args:
+        df: DataFrame of available videos at this level
+        strat_config: Full stratification configuration
+        target_count: Number of videos to select at this level
+        level: Current stratification level (0-indexed)
+
+    Returns:
+        List of selected video IDs
+    """
+    # Base case: no more stratification levels
+    if level >= len(strat_config):
+        # Sample randomly from remaining videos
+        if target_count and target_count < len(df):
+            sampled = df.sample(n=target_count, replace=False)
+            return sampled['id'].tolist()
+        else:
+            return df['id'].tolist()
+
+    # Get current stratification variable configuration
+    var_config = strat_config[level]
+    variable = var_config.get('variable')
+    levels_list = var_config.get('levels', [])
+    proportions = var_config.get('proportions', [])
+
+    # Validate configuration
+    if not variable or not levels_list or not proportions:
+        print(f"[WARNING] Invalid stratification config at level {level}: {var_config}")
+        return df['id'].tolist()[:target_count] if target_count else df['id'].tolist()
+
+    if len(levels_list) != len(proportions):
+        print(f"[WARNING] Levels and proportions length mismatch for '{variable}'")
+        return df['id'].tolist()[:target_count] if target_count else df['id'].tolist()
+
+    if abs(sum(proportions) - 1.0) > 0.01:
+        print(f"[WARNING] Proportions for '{variable}' don't sum to 1.0: {sum(proportions)}")
+
+    # Check if variable exists in metadata
+    if variable not in df.columns:
+        print(f"[WARNING] Variable '{variable}' not found in metadata. Skipping stratification.")
+        return df['id'].tolist()[:target_count] if target_count else df['id'].tolist()
+
+    # Filter to only specified levels
+    df_filtered = df[df[variable].isin(levels_list)]
+
+    if len(df_filtered) == 0:
+        print(f"[WARNING] No videos found for '{variable}' with levels {levels_list}")
+        # Fallback: return from unfiltered
+        return df['id'].tolist()[:target_count] if target_count else df['id'].tolist()
+
+    # Calculate target counts per level and sample
+    selected_ids = []
+
+    for i, level_value in enumerate(levels_list):
+        level_df = df_filtered[df_filtered[variable] == level_value]
+
+        if len(level_df) == 0:
+            print(f"[INFO] No videos for {variable}={level_value}, skipping")
+            continue
+
+        # Calculate target count for this level based on proportion
+        level_target = int(round(target_count * proportions[i])) if target_count else None
+
+        # If too few videos available, take all
+        if level_target and len(level_df) < level_target:
+            print(f"[INFO] {variable}={level_value}: requested {level_target}, only {len(level_df)} available. Taking all.")
+            level_target = len(level_df)
+
+        # Recursively stratify by next variable within this stratum
+        level_selected = _stratified_sample_recursive(level_df, strat_config, level_target, level + 1)
+        selected_ids.extend(level_selected)
+
+    return selected_ids
+
 def display_video_with_mode(video_file_path, playback_mode='loop'):
     """
     Display video with specified playback mode.
@@ -44,17 +173,19 @@ def display_video_with_mode(video_file_path, playback_mode='loop'):
         video_base64 = base64.b64encode(video_bytes).decode()
 
         # Create HTML5 video player without controls
+        # Use object-fit: contain to ensure video is never cropped
         video_html = f"""
-        <video
-            width="100%"
-            autoplay
-            muted
-            style="max-width: 100%; height: auto;"
-            onended="this.pause();"
-        >
-            <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+        <div style="width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center;">
+            <video
+                autoplay
+                muted
+                style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;"
+                onended="this.pause();"
+            >
+                <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
         <style>
             video::-webkit-media-controls {{
                 display: none !important;
@@ -64,7 +195,7 @@ def display_video_with_mode(video_file_path, playback_mode='loop'):
             }}
         </style>
         """
-        components.html(video_html, height=500)
+        components.html(video_html, height=600)
 
     else:
         # Fallback to default
@@ -116,7 +247,7 @@ def initialize_video_player(config):
     ]
 
     # Get configuration
-    db_path = config['paths']['db_path']
+    metadata_path = config['paths']['metadata_path']
     video_path = config['paths']['video_path']
     min_ratings_per_video = config['settings']['min_ratings_per_video']
 
@@ -142,30 +273,62 @@ def initialize_video_player(config):
         print(f"[WARNING] Error filtering fully-rated videos: {e}")
         videos_to_rate = unrated_videos
 
-    # Shuffle videos
-    random.shuffle(videos_to_rate)
+    # Load metadata FIRST (before sampling) to enable stratification
+    df_metadata = pd.DataFrame()
+    try:
+        if videos_to_rate:
+            # Get event IDs from video filenames
+            event_ids = [v.replace('.mp4', '') for v in videos_to_rate]
 
+            # Detect file type and load metadata accordingly
+            if metadata_path.endswith('.duckdb'):
+                # Load from DuckDB
+                conn = duckdb.connect(metadata_path, read_only=True)
+                event_id_str = ', '.join(f"'{event_id}'" for event_id in event_ids)
+                query = f"SELECT * FROM events WHERE id IN ({event_id_str})"
+                df_metadata = conn.execute(query).fetchdf()
+                conn.close()
+            elif metadata_path.endswith('.csv'):
+                # Load from CSV
+                df_full = pd.read_csv(metadata_path)
+                df_metadata = df_full[df_full['id'].isin(event_ids)]
+            else:
+                print(f"[WARNING] Unsupported metadata file type: {metadata_path}")
+                df_metadata = pd.DataFrame()
+    except Exception as e:
+        print(f"[WARNING] Failed to load metadata: {e}")
+        df_metadata = pd.DataFrame()
+
+    # Apply stratified sampling or simple random sampling
+    number_of_videos = config['settings'].get('number_of_videos', None)
+    strat_config = config['settings'].get('variables_for_stratification', [])
+
+    if strat_config and len(strat_config) > 0:
+        # Use stratified sampling
+        print(f"[INFO] Applying stratified sampling with {len(strat_config)} variable(s)")
+        videos_to_rate = stratified_sample_videos(
+            videos_to_rate,
+            df_metadata,
+            number_of_videos,
+            strat_config
+        )
+    else:
+        # Use simple random sampling
+        if number_of_videos and number_of_videos < len(videos_to_rate):
+            videos_to_rate = random.sample(videos_to_rate, number_of_videos)
+        random.shuffle(videos_to_rate)
+
+    # Store in session state
     st.session_state.videos_to_rate = videos_to_rate
     st.session_state.current_video_index = 0
     st.session_state.video_path = video_path
 
-    # Load metadata from database
-    try:
-        conn = duckdb.connect(db_path, read_only=True)
+    # Filter metadata to only selected videos
+    if not df_metadata.empty:
+        selected_event_ids = [v.replace('.mp4', '') for v in videos_to_rate]
+        df_metadata = df_metadata[df_metadata['id'].isin(selected_event_ids)]
 
-        if videos_to_rate:
-            event_id_str = ', '.join(f"'{v.replace('.mp4', '')}'" for v in videos_to_rate)
-            query = f"SELECT * FROM events WHERE id IN ({event_id_str})"
-            df_metadata = conn.execute(query).fetchdf()
-        else:
-            df_metadata = pd.DataFrame()
-
-        conn.close()
-        st.session_state.metadata = df_metadata
-    except Exception as e:
-        print(f"[WARNING] Failed to load metadata: {e}")
-        st.session_state.metadata = pd.DataFrame()
-
+    st.session_state.metadata = df_metadata
     st.session_state.video_initialized = True
 
 def display_rating_interface(action_id, video_filename, config):
@@ -195,19 +358,22 @@ def display_rating_interface(action_id, video_filename, config):
     if display_metadata and not metadata.empty:
         row = metadata[metadata['id'] == action_id]
         if not row.empty:
-            #st.markdown("### Action Information")
-            col1, col2, col3, col4, col5 = st.columns(5)
-            with col1:
-                st.metric("Team", row.team.values[0])
-            with col2:
-                st.metric("Player", row.player.values[0])
-            with col3:
-                st.metric("Jersey #", row.jersey_number.values[0])
-            with col4:
-                st.metric("Type", row.type.values[0])
-            with col5:
-                if 'bodypart' in row.columns:
-                    st.metric("Body Part", row.bodypart.values[0])
+            # Get metadata fields to display from config
+            metadata_to_show = config['settings'].get('metadata_to_show', [])
+
+            if metadata_to_show:
+                # Create columns dynamically based on number of metadata fields
+                cols = st.columns(len(metadata_to_show))
+
+                # Display each metadata field
+                for idx, field_config in enumerate(metadata_to_show):
+                    label = field_config.get('label', '')
+                    column = field_config.get('column', '')
+
+                    # Check if column exists in metadata
+                    if column and column in row.columns:
+                        with cols[idx]:
+                            st.metric(label, row[column].values[0])
 
     st.markdown("---")
 

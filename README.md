@@ -62,8 +62,8 @@ For deploying to Streamlit Cloud or other hosting platforms:
 
 ```yaml
 paths:
-  db_path: "/path/to/database.duckdb"  # DuckDB database with event metadata
-  video_path: "/path/to/videos/"       # Directory containing .mp4 files
+  metadata_path: "/path/to/metadata.duckdb"  # DuckDB database or CSV file with event metadata
+  video_path: "/path/to/videos/"             # Directory containing .mp4 files
 
 settings:
   min_ratings_per_video: 2  # Stop showing videos after N ratings collected
@@ -187,9 +187,10 @@ Edit `config/rating_scales.yaml`:
 - Ensure video files are .mp4 format
 - Verify file permissions
 
-### Database connection errors
-- Check that `db_path` in `config.yaml` points to valid DuckDB file
-- Ensure database has `events` table with required columns
+### Metadata loading errors
+- Check that `metadata_path` in `config.yaml` points to valid DuckDB (.duckdb) or CSV (.csv) file
+- For DuckDB: Ensure database has `events` table with required columns
+- For CSV: Ensure file has an `id` column matching video filenames (without .mp4)
 
 ### Configuration errors
 - Validate YAML syntax using an online validator

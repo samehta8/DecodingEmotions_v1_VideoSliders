@@ -22,6 +22,12 @@
   hint_text: "Enter your age"
 
 - active: true
+  type: "multiple_choice"
+  field_name: "footedness"
+  title: "Which foot do you use?"
+  options: ["left", "right", "both"]
+
+- active: true
   type: "text"
   field_name: "nationality"
   title: ""
