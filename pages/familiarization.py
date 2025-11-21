@@ -13,6 +13,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from utils.config_loader import load_rating_scales
+from utils.video_rating_display import display_video_rating_interface
 
 def display_video_with_mode(video_file_path, playback_mode='loop'):
     """
@@ -160,81 +161,24 @@ def display_familiarization_interface(video_filename, config):
     familiarization_path = st.session_state.familiarization_path
     rating_scales = st.session_state.rating_scales
 
-    # Display options from config
-    video_playback_mode = config['settings'].get('video_playback_mode', 'loop')
+    # Define header content as a function
+    def show_familiarization_header():
+        current_index = st.session_state.familiarization_video_index
+        total_videos = len(st.session_state.familiarization_videos)
+        st.info(f"🎯 **Familiarization Trial** - **Video {current_index + 1} of {total_videos}**. These ratings will not be saved.")
 
-    # Add familiarization header
-
-    current_index = st.session_state.familiarization_video_index
-    total_videos = len(st.session_state.familiarization_videos)
-    st.info(f"🎯 **Familiarization Trial** - **Video {current_index + 1} of {total_videos}**. These ratings will not be saved.")
-
-    st.markdown("---")
-
-    # Video display (no metadata or pitch for familiarization)
-    video_file = os.path.join(familiarization_path, video_filename)
-    display_video_with_mode(video_file, video_playback_mode)
-
-    st.markdown("---")
-
-    # Rating scales
-    st.markdown("### Please rate the action on the following dimensions:")
-
-    scale_values = {}
-
-    for scale_config in rating_scales:
-        scale_type = scale_config.get('type', 'discrete')
-        title = scale_config.get('title', 'Scale')
-        label_low = scale_config.get('label_low', '')
-        label_high = scale_config.get('label_high', '')
-        required = scale_config.get('required_to_proceed', True)
-
-        # Display scale title and labels
-        st.markdown(f"**{title}** {'*(required)*' if required else ''}")
-
-        col_low, col_scale, col_high = st.columns([1, 3, 1])
-
-        with col_low:
-            st.markdown(f"*{label_low}*")
-
-        with col_scale:
-            if scale_type == 'discrete':
-                values = scale_config.get('values', [1, 2, 3, 4, 5, 6, 7])
-                selected = st.pills(
-                    label=title,
-                    options=values,
-                    key=f"famil_scale_{video_filename}_{title}",
-                    label_visibility="collapsed",
-                    width="stretch"
-                )
-                scale_values[title] = selected
-
-            elif scale_type == 'slider':
-                slider_min = scale_config.get('slider_min', 0)
-                slider_max = scale_config.get('slider_max', 100)
-                selected = st.slider(
-                    label=title,
-                    min_value=float(slider_min),
-                    max_value=float(slider_max),
-                    value=float(slider_min + slider_max) / 2,
-                    key=f"famil_scale_{video_filename}_{title}",
-                    label_visibility="collapsed"
-                )
-                scale_values[title] = selected
-
-            elif scale_type == 'text':
-                selected = st.text_input(
-                    label=title,
-                    key=f"famil_scale_{video_filename}_{title}",
-                    placeholder="Enter your response...",
-                    label_visibility="collapsed"
-                )
-                scale_values[title] = selected if selected else None
-
-        with col_high:
-            st.markdown(f"*{label_high}*")
-
-        st.markdown("")  # Spacing
+    # Use shared display function
+    scale_values = display_video_rating_interface(
+        video_filename=video_filename,
+        video_path=familiarization_path,
+        config=config,
+        rating_scales=rating_scales,
+        key_prefix="famil_scale_",
+        action_id=None,  # Familiarization doesn't use action IDs
+        metadata=None,  # Familiarization doesn't use metadata
+        header_content=show_familiarization_header,
+        display_video_func=display_video_with_mode
+    )
 
     st.markdown("---")
 

@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 
 from utils.config_loader import load_rating_scales
 from utils.data_persistence import save_rating, get_rated_videos_for_user
+from utils.video_rating_display import display_video_rating_interface
 
 def stratified_sample_videos(videos_to_rate, df_metadata, number_of_videos, strat_config):
     """
@@ -337,148 +338,18 @@ def display_rating_interface(action_id, video_filename, config):
     metadata = st.session_state.metadata
     rating_scales = st.session_state.rating_scales
 
-    # Display options from config
-    display_metadata = config['settings'].get('display_metadata', True)
-    display_pitch = config['settings'].get('display_pitch', True)
-    video_playback_mode = config['settings'].get('video_playback_mode', 'loop')
-
-    #st.title("⚽ Video Rating")
-
-    # Top metadata bar (if enabled)
-    if display_metadata and not metadata.empty:
-        row = metadata[metadata['id'] == action_id]
-        if not row.empty:
-            # Get metadata fields to display from config
-            metadata_to_show = config['settings'].get('metadata_to_show', [])
-
-            if metadata_to_show:
-                # Create columns dynamically based on number of metadata fields
-                cols = st.columns(len(metadata_to_show))
-
-                # Display each metadata field
-                for idx, field_config in enumerate(metadata_to_show):
-                    label = field_config.get('label', '')
-                    column = field_config.get('column', '')
-
-                    # Check if column exists in metadata
-                    if column and column in row.columns:
-                        with cols[idx]:
-                            st.metric(label, row[column].values[0])
-
-    st.markdown("---")
-
-    # Video and pitch visualization area
-    if display_pitch and not metadata.empty:
-        # Show video and pitch side by side
-        col_video, col_pitch = st.columns([55, 45])
-
-        with col_video:
-          #  st.markdown("### Video")
-            video_file = os.path.join(video_path, video_filename)
-            display_video_with_mode(video_file, video_playback_mode)
-
-        with col_pitch:
-           # st.markdown("### Pitch Visualization")
-            # Generate pitch visualization
-            row = metadata[metadata['id'] == action_id]
-            if not row.empty:
-                try:
-                    import mplsoccer
-                    pitch = mplsoccer.Pitch(pitch_type="statsbomb", pitch_color="grass")
-                    fig, ax = pitch.draw(figsize=(6, 4))
-
-                    fig.patch.set_facecolor('black')
-                    fig.patch.set_alpha(1)
-
-                    # Draw arrow
-                    start_x = row.start_x.values[0]
-                    start_y = row.start_y.values[0]
-                    end_x = row.end_x.values[0]
-                    end_y = row.end_y.values[0]
-
-                    pitch.arrows(start_x, start_y, end_x, end_y,
-                                ax=ax, color="blue", width=2, headwidth=10, headlength=5)
-                    ax.plot(start_x, start_y, 'o', color='blue', markersize=10)
-
-                    fig.tight_layout(pad=0)
-                    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
-
-                    st.pyplot(fig)
-                    plt.close(fig)
-                except Exception as e:
-                    st.error(f"Failed to generate pitch visualization: {e}")
-            else:
-                st.info("No metadata available for this video")
-
-    else:
-        # Show only video (centered)
-        st.markdown("### Video")
-        video_file = os.path.join(video_path, video_filename)
-        display_video_with_mode(video_file, video_playback_mode)
-
-    st.markdown("---")
-
-    # Rating scales
-    #st.markdown("### Rating Scales")
-    st.markdown("### Please rate the action on the following dimensions:")
-
-    scale_values = {}
-
-    for scale_config in rating_scales:
-        scale_type = scale_config.get('type', 'discrete')
-        title = scale_config.get('title', 'Scale')
-        label_low = scale_config.get('label_low', '')
-        label_high = scale_config.get('label_high', '')
-        required = scale_config.get('required_to_proceed', True)
-
-        # Display scale title and labels
-        st.markdown(f"**{title}** {'*(required)*' if required else ''}")
-
-        col_low, col_scale, col_high = st.columns([1, 3, 1])
-
-        with col_low:
-            st.markdown(f"*{label_low}*")
-
-        with col_scale:
-            if scale_type == 'discrete':
-                values = scale_config.get('values', [1, 2, 3, 4, 5, 6, 7])
-                selected = st.pills(
-                    label=title,
-                    options=values,
-                    #horizontal=True,
-                    key=f"scale_{action_id}_{title}",
-                    label_visibility="collapsed",
-                    width="stretch"
-                 #   index=None
-                )
-                scale_values[title] = selected
-
-            elif scale_type == 'slider':
-                slider_min = scale_config.get('slider_min', 0)
-                slider_max = scale_config.get('slider_max', 100)
-                selected = st.slider(
-                    label=title,
-                    min_value=float(slider_min),
-                    max_value=float(slider_max),
-                    value=float(slider_min + slider_max) / 2,
-                    key=f"scale_{action_id}_{title}",
-                    label_visibility="collapsed"
-                )
-                scale_values[title] = selected
-
-            elif scale_type == 'text':
-                selected = st.text_input(
-                    label=title,
-                    key=f"scale_{action_id}_{title}",
-                    placeholder="Enter your response...",
-                    label_visibility="collapsed"
-                )
-                scale_values[title] = selected if selected else None
-
-        with col_high:
-            st.markdown(f"*{label_high}*")
-
-        st.markdown("")  # Spacing
+    # Use shared display function
+    scale_values = display_video_rating_interface(
+        video_filename=video_filename,
+        video_path=video_path,
+        config=config,
+        rating_scales=rating_scales,
+        key_prefix="scale_",
+        action_id=action_id,
+        metadata=metadata,
+        header_content=None,  # No header for main videoplayer
+        display_video_func=display_video_with_mode
+    )
 
     st.markdown("---")
 
