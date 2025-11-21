@@ -37,3 +37,5 @@ Thumbs.db
 secrets/
 info.txt
 .streamlit/secrets.toml
+
+CLAUDE.md
