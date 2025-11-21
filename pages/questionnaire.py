@@ -5,13 +5,9 @@ Dynamically builds form based on config/questionnaire_fields.yaml.
 import streamlit as st
 from utils.config_loader import load_questionnaire_fields
 from utils.data_persistence import save_user_data
-from utils.styling import apply_compact_layout
 
 def show():
     """Display the questionnaire screen."""
-    # Apply compact layout to minimize scrolling
-    apply_compact_layout()
-
     user = st.session_state.user
     config = st.session_state.config
 

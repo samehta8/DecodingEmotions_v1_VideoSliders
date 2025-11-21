@@ -3,13 +3,9 @@ Post-familiarization instructions page.
 Displays instructions for the final rating procedure.
 """
 import streamlit as st
-from utils.styling import apply_compact_layout
 
 def show():
     """Display the post-familiarization instructions screen."""
-    # Apply compact layout
-    apply_compact_layout()
-
     st.success("""
     ### Great job!
 

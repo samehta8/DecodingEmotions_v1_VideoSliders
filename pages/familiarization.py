@@ -13,7 +13,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from utils.config_loader import load_rating_scales
-from utils.styling import apply_compact_layout, set_video_height, set_spacing
 
 def display_video_with_mode(video_file_path, playback_mode='loop'):
     """
@@ -158,12 +157,6 @@ def initialize_familiarization(config):
 
 def display_familiarization_interface(video_filename, config):
     """Display the familiarization rating interface."""
-    # Apply compact layout to minimize scrolling
-    apply_compact_layout()
-
-    # Optionally set video height (as percentage of viewport height)
-    set_video_height(height_vh=40)  # Video takes 40% of screen height
-
     familiarization_path = st.session_state.familiarization_path
     rating_scales = st.session_state.rating_scales
 

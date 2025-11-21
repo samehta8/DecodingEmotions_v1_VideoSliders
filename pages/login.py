@@ -3,13 +3,9 @@ Login page - Check if user has participated before.
 """
 import streamlit as st
 from utils.data_persistence import user_exists
-from utils.styling import apply_compact_layout
 
 def show():
     """Display the login screen."""
-    # Apply compact layout to minimize scrolling
-    apply_compact_layout()
-
     st.title("🔐 Login")
 
     st.markdown("### Have you participated in this study before?")

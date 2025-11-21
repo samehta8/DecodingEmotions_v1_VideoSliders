@@ -3,13 +3,9 @@ Pre-familiarization instructions page.
 Displays introductory text before the familiarization trials begin.
 """
 import streamlit as st
-from utils.styling import apply_compact_layout
 
 def show():
     """Display the pre-familiarization instructions screen."""
-    # Apply compact layout
-    apply_compact_layout()
-
     st.markdown("""
     ### Welcome to the Emotion Recognition Survey!
     

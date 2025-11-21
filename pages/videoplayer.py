@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 
 from utils.config_loader import load_rating_scales
 from utils.data_persistence import save_rating, get_rated_videos_for_user
-from utils.styling import apply_compact_layout, set_video_height, set_spacing
 
 def stratified_sample_videos(videos_to_rate, df_metadata, number_of_videos, strat_config):
     """
@@ -333,15 +332,6 @@ def initialize_video_player(config):
 
 def display_rating_interface(action_id, video_filename, config):
     """Display the main rating interface with video and scales."""
-    # Apply compact layout to minimize scrolling
-    apply_compact_layout()
-
-    # Optionally set video height (as percentage of viewport height)
-    set_video_height(height_vh=40)  # Video takes 40% of screen height
-
-    # Optionally adjust spacing
-    # set_spacing(top=1, bottom=0.5, between_elements=0.3)
-
     user = st.session_state.user
     video_path = st.session_state.video_path
     metadata = st.session_state.metadata

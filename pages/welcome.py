@@ -2,15 +2,9 @@
 Welcome page - Initial instructions screen.
 """
 import streamlit as st
-from utils.styling import apply_compact_layout, set_spacing
 
 def show():
     """Display the welcome screen."""
-    # Apply compact layout to minimize scrolling
-    apply_compact_layout()
-    # Optionally adjust spacing (top, bottom, between_elements in rem)
-    # set_spacing(top=1, bottom=0.5, between_elements=0.3)
-
     #st.title("⚽ Creativity Rating App")
 
     st.markdown("""
