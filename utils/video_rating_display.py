@@ -106,6 +106,8 @@ def display_video_rating_interface(
 
                     st.pyplot(fig)
                     plt.close(fig)
+                except ImportError:
+                    st.warning("⚠️ Pitch visualization requires mplsoccer package. Please install it to enable this feature.")
                 except Exception as e:
                     st.error(f"Failed to generate pitch visualization: {e}")
             else:
