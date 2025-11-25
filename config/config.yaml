@@ -1,10 +1,9 @@
 paths:
   metadata_path: "data/meta_emotions.csv"
 
-  # Video source: "local" or "gdrive"
+  # Video source: "local" only (Google Drive support removed)
   # - "local": Load videos from local filesystem (video_path)
-  # - "gdrive": Load videos from Google Drive (folder IDs configured in .streamlit/secrets.toml)
-  video_source: "gdrive"
+  video_source: "local"
 
   # Local filesystem paths (used when video_source = "local")
   # path to external drive on Linux

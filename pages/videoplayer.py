@@ -147,16 +147,13 @@ def _stratified_sample_recursive(df, strat_config, target_count, level):
 def display_video_with_mode(video_file_path, playback_mode='loop'):
     """
     Display video with specified playback mode.
-    Handles both local and Google Drive video sources.
 
     Parameters:
-    - video_file_path: Path to the video file (local or from Google Drive cache)
+    - video_file_path: Path to the local video file
     - playback_mode: 'loop' or 'once'
         - 'loop': Autoplay, loop enabled, controls visible
         - 'once': Autoplay, no loop, no controls (plays once only)
     """
-    # For Google Drive videos, video_file_path will be a temp path that already exists
-    # For local videos, check if file exists
     if not os.path.exists(video_file_path):
         st.error(f"Video file not found: {video_file_path}")
         return
@@ -251,33 +248,17 @@ def initialize_video_player(config):
 
     # Get configuration
     metadata_path = config['paths']['metadata_path']
-    video_source = config['paths'].get('video_source', 'local')
+    video_path = config['paths']['video_path']
     min_ratings_per_video = config['settings']['min_ratings_per_video']
 
-    # Get all video files based on source
-    if video_source == 'gdrive':
-        # Get videos from Google Drive
-        try:
-            folder_id = st.secrets["gdrive"]["video_folder_id"]
-            all_videos = get_all_video_filenames(folder_id)
-            print(f"[INFO] Loaded {len(all_videos)} videos from Google Drive")
-            # Store folder_id for later use
-            st.session_state.gdrive_folder_id = folder_id
-            st.session_state.video_source = 'gdrive'
-        except Exception as e:
-            st.error(f"Failed to load videos from Google Drive: {e}")
-            print(f"[ERROR] Google Drive error: {e}")
-            all_videos = []
-    else:
-        # Get videos from local filesystem
-        video_path = config['paths']['video_path']
-        try:
-            all_videos = [f for f in os.listdir(video_path) if f.lower().endswith('.mp4')]
-            st.session_state.video_path = video_path
-            st.session_state.video_source = 'local'
-        except FileNotFoundError:
-            st.error(f"Video directory not found: {video_path}")
-            all_videos = []
+    # Get all video files from local filesystem
+    try:
+        all_videos = [f for f in os.listdir(video_path) if f.lower().endswith('.mp4')]
+        st.session_state.video_path = video_path
+        print(f"[INFO] Loaded {len(all_videos)} videos from {video_path}")
+    except FileNotFoundError:
+        st.error(f"Video directory not found: {video_path}")
+        all_videos = []
 
     # Filter out videos already rated by this user
     videos_rated_by_user = get_rated_videos_for_user(user.user_id)
@@ -358,36 +339,9 @@ def display_rating_interface(action_id, video_filename, config):
     user = st.session_state.user
     metadata = st.session_state.metadata
     rating_scales = st.session_state.rating_scales
-    video_source = st.session_state.get('video_source', 'local')
 
-    # Get video path based on source
-    if video_source == 'gdrive':
-        # For Google Drive, download the video and get temp path
-        folder_id = st.session_state.gdrive_folder_id
-        video_file_path = get_video_path(video_filename, folder_id)
-
-        if not video_file_path:
-            st.error(f"⚠️ Failed to load video from Google Drive: {video_filename}")
-            st.warning("This video could not be loaded due to a network error. You can skip this video and continue with the next one.")
-
-            # Add skip button
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col2:
-                if st.button("Skip to Next Video", use_container_width=True, type="primary"):
-                    # Move to next video
-                    st.session_state.current_video_index = st.session_state.get('current_video_index', 0) + 1
-                    st.rerun()
-
-            return {}
-
-        # For Google Drive, pass the parent directory of the temp file
-        # This maintains compatibility with display_video_rating_interface
-        video_path = os.path.dirname(video_file_path)
-        # Override filename to just the basename
-        video_filename = os.path.basename(video_file_path)
-    else:
-        # For local filesystem
-        video_path = st.session_state.video_path
+    # Get video path from local filesystem
+    video_path = st.session_state.video_path
 
     # Use shared display function
     scale_values = display_video_rating_interface(
