@@ -43,9 +43,7 @@ def display_video_only(video_filename, video_path, config, display_video_func, a
                         with cols[idx]:
                             st.metric(label, row[column].values[0])
 
-        st.markdown("---")
-
-    # Display centered video
+    # Display centered video (no spacing/divider)
     video_file = os.path.join(video_path, video_filename)
     if display_video_func:
         display_video_func(video_file, video_playback_mode, video_width, enable_auto_advance=False)
@@ -96,7 +94,8 @@ def display_rating_scales_only(video_filename, rating_scales, key_prefix, action
                         options=values,
                         key=unique_key,
                         label_visibility="collapsed",
-                        selection_mode="single"
+                        selection_mode="single",
+                        width='stretch'
                     )
                     scale_values[title] = selected
 
@@ -152,7 +151,8 @@ def display_rating_scales_only(video_filename, rating_scales, key_prefix, action
                         options=values,
                         key=unique_key,
                         label_visibility="collapsed",
-                        selection_mode="single"
+                        selection_mode="single",
+                        width='stretch'
                     )
                     scale_values[title] = selected
 
@@ -362,7 +362,8 @@ def display_video_rating_interface(
                                 options=values,
                                 key=unique_key,
                                 label_visibility="collapsed",
-                                selection_mode="single"
+                                selection_mode="single",
+                                width='stretch'
                             )
                             scale_values[title] = selected
 
@@ -418,7 +419,8 @@ def display_video_rating_interface(
                                 options=values,
                                 key=unique_key,
                                 label_visibility="collapsed",
-                                selection_mode="single"
+                                selection_mode="single",
+                                width='stretch'
                             )
                             scale_values[title] = selected
 

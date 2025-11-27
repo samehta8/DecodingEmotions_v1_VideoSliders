@@ -289,6 +289,29 @@ def display_familiarization_video_screen(video_filename, config):
     familiarization_path = st.session_state.familiarization_path
     rating_scales = st.session_state.rating_scales
 
+    # Add custom CSS to eliminate vertical spacing
+    st.markdown("""
+        <style>
+        .stApp > div:first-child {
+            padding-top: 0rem;
+        }
+        div[data-testid="stVerticalBlock"] > div {
+            gap: 0rem;
+        }
+        .element-container {
+            margin: 0rem;
+            padding: 0rem;
+        }
+        .stMarkdown {
+            margin: 0rem;
+            padding: 0rem;
+        }
+        [data-testid="stHorizontalBlock"] {
+            gap: 0rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # Display video info
     current_index = st.session_state.familiarization_video_index
     total_videos = len(st.session_state.familiarization_videos)
@@ -312,8 +335,6 @@ def display_familiarization_video_screen(video_filename, config):
         display_mode='video_only'
     )
 
-    st.markdown("---")
-
     # Navigation buttons
     col1, col2, col3 = st.columns([1, 1, 1])
 
@@ -332,8 +353,6 @@ def display_familiarization_rating_screen(video_filename, config):
     total_videos = len(st.session_state.familiarization_videos)
     st.info(f"📊 **Familiarization Trial - Rating {current_index + 1} of {total_videos}**. Please rate the video you just watched. *These ratings will not be saved.*")
 
-    st.markdown("---")
-
     # Use shared display function in rating-only mode
     scale_values = display_video_rating_interface(
         video_filename=video_filename,
@@ -347,8 +366,6 @@ def display_familiarization_rating_screen(video_filename, config):
         display_video_func=display_video_with_mode,
         display_mode='rating_only'
     )
-
-    st.markdown("---")
 
     # Navigation buttons
     col1, col2, col3 = st.columns([1, 1, 1])
