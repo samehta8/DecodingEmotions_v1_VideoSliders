@@ -313,9 +313,9 @@ def display_familiarization_video_screen(video_filename, config):
     """, unsafe_allow_html=True)
 
     # Display video info
-    current_index = st.session_state.familiarization_video_index
-    total_videos = len(st.session_state.familiarization_videos)
-    st.info(f"🎯 **Familiarization Trial - Video {current_index + 1} of {total_videos}**. Watch the video carefully.")
+    #current_index = st.session_state.familiarization_video_index
+    #total_videos = len(st.session_state.familiarization_videos)
+    #st.info(f"🎯 **Familiarization Trial - Video {current_index + 1} of {total_videos}**. Watch the video carefully.")
 
     # Define header content as a function
     def show_familiarization_header():
